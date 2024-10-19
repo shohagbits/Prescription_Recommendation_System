@@ -2,6 +2,7 @@
 using Microsoft.ML;
 using Microsoft.ML.Trainers;
 using PRS.Core;
+using PRS.Repository;
 
 namespace PRS.API.Controllers
 {
@@ -13,6 +14,7 @@ namespace PRS.API.Controllers
         private readonly string _trainDataPath;
         private readonly string _testDataPath;
         private readonly string _trainedModelPath;
+        private readonly PRS_DbContext _dbContext;
 
         public AIModelController()
         {
@@ -20,11 +22,20 @@ namespace PRS.API.Controllers
             _trainDataPath = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "Data", "patient-prescription-train.csv");
             _testDataPath = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "Data", "patient-prescription-test.csv");
             _trainedModelPath = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "Data", "PrescriptionPredictTrainedModel.zip");
+
+            _dbContext = new PRS_DbContext();
         }
         [HttpGet]
         [Route("dataset")]
         public IActionResult Dataset()
-        {         
+        {
+            var trainingDataSet = _dbContext.ModelTrainDataSets.ToList();
+            if (trainingDataSet.Count > 0)
+            {
+                var testDataCount = Convert.ToInt32(Math.Round(trainingDataSet.Count*0.2));
+                var testDataSet = trainingDataSet.Take(testDataCount).ToList();
+            }
+
             return Ok($"Successfully collected dataset from Database to perform trained model at {DateTime.Now}!");
         }
 
