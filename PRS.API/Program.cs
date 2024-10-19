@@ -21,6 +21,15 @@ namespace PRS.API
                     Description = "Prescription Recommendation System Web API"
                 });    
             });
+            builder.Services.AddCors(builder =>
+            {
+                builder.AddPolicy("AllowAll", options =>
+                {
+                    options.AllowAnyOrigin()
+                        .AllowAnyMethod()
+                        .AllowAnyHeader();
+                });
+            });
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -32,7 +41,7 @@ namespace PRS.API
             app.UseHttpsRedirection();
 
             app.UseAuthorization();
-
+            app.UseCors();
 
             app.MapControllers();
 
