@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.ML;
 using Microsoft.ML.Trainers;
 using PRS.Core;
 using PRS.Repository;
+using System.Text;
 
 namespace PRS.API.Controllers
 {
@@ -27,15 +29,30 @@ namespace PRS.API.Controllers
         }
         [HttpGet]
         [Route("dataset")]
-        public IActionResult Dataset()
+        public async Task<IActionResult> Dataset()
         {
-            var trainingDataSet = _dbContext.ModelTrainDataSets.ToList();
+            var trainingDataSet = await _dbContext.ModelTrainDataSets.ToListAsync();
             if (trainingDataSet.Count > 0)
             {
+                StringBuilder builder = new StringBuilder();
+                foreach (ModelTrainDataSet trainingSet in trainingDataSet)
+                {
+                    builder.AppendLine(trainingSet.TrainDataSet);
+                }
+                System.IO.File.WriteAllText(_trainDataPath, builder.ToString(), new UTF8Encoding());
+
                 var testDataCount = Convert.ToInt32(Math.Round(trainingDataSet.Count*0.2));
                 var testDataSet = trainingDataSet.Take(testDataCount).ToList();
+                if (testDataSet.Count > 0)
+                {
+                    builder = new StringBuilder();
+                    foreach (ModelTrainDataSet trainingSet in testDataSet)
+                    {
+                        builder.AppendLine(trainingSet.TrainDataSet);
+                    }
+                    System.IO.File.WriteAllText(_testDataPath, builder.ToString(), new UTF8Encoding());
+                }
             }
-
             return Ok($"Successfully collected dataset from Database to perform trained model at {DateTime.Now}!");
         }
 
@@ -142,6 +159,9 @@ namespace PRS.API.Controllers
             Console.WriteLine($"Predicted fare: {prediction.prescriptionId:0.####}, actual fare: 15.5");
             Console.WriteLine($"Predicted Round: {Math.Round(prediction.prescriptionId)}, actual fare: 18");
             Console.WriteLine($"**********************************************************************");
+
+
+
 
             return Ok(prediction);
         }
