@@ -20,7 +20,6 @@ namespace PRS.Service
         {
             try
             {
-                return false;
                 var trainingDataSet = await _dbContext.ModelTrainDataSets.ToListAsync();
                 if (trainingDataSet.Count > 0)
                 {
