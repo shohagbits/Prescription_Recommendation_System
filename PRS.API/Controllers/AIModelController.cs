@@ -129,33 +129,43 @@ namespace PRS.API.Controllers
         {
             try
             {
-                if (!String.IsNullOrWhiteSpace(model.PrescriptionId))
-                    model=await _commonService.GetPredictRequestAsync(model.PrescriptionId);
-
-                // Load the model from the zipped file
-                ITransformer modelLoad = _mlContext.Model.Load(_trainedModelPath, out var modelSchema);
-
-                // Create the prediction engine
-                PredictionEngine<Prescription, PrescriptionPrediction> _predictionEngine = _mlContext.Model.CreatePredictionEngine<Prescription, PrescriptionPrediction>(modelLoad);
-
-                var prescription = new Prescription()
+                if (!String.IsNullOrWhiteSpace(model.DiseaseId) ||
+                    !String.IsNullOrWhiteSpace(model.TreatmentId) ||
+                    !String.IsNullOrWhiteSpace(model.ChiefComplaints))
                 {
-                    diseaseId =model.DiseaseId,
-                    treatmentId = model.TreatmentId,
-                    chiefComplaints = model.ChiefComplaints,
-                    prescriptionId =0 // To predict. 1,2,Chief complaints position 1,18
-                };
-                var prediction = _predictionEngine.Predict(prescription);
+                    if (!String.IsNullOrWhiteSpace(model.PrescriptionId))
+                        model=await _commonService.GetPredictRequestAsync(model.PrescriptionId);
 
-                Console.WriteLine($"**********************************************************************");
-                Console.WriteLine($"Predicted fare: {prediction.prescriptionId:0.####}, actual fare: 15.5");
-                Console.WriteLine($"Predicted Round: {Math.Round(prediction.prescriptionId)}, actual fare: 18");
-                Console.WriteLine($"**********************************************************************");
+                    // Load the model from the zipped file
+                    ITransformer modelLoad = _mlContext.Model.Load(_trainedModelPath, out var modelSchema);
 
-                var id = Convert.ToInt32(Math.Round(prediction.prescriptionId));
-                var prescripton = await _commonService.GetPrescriptionAsync(id);
+                    // Create the prediction engine
+                    PredictionEngine<Prescription, PrescriptionPrediction> _predictionEngine = _mlContext.Model.CreatePredictionEngine<Prescription, PrescriptionPrediction>(modelLoad);
 
-                return Ok(prescripton);
+                    var prescription = new Prescription()
+                    {
+                        diseaseId =model.DiseaseId,
+                        treatmentId = model.TreatmentId,
+                        chiefComplaints = model.ChiefComplaints,
+                        prescriptionId =0 // To predict. 1,2,Chief complaints position 1,18
+                    };
+                    var prediction = _predictionEngine.Predict(prescription);
+
+                    Console.WriteLine($"**********************************************************************");
+                    Console.WriteLine($"Predicted fare: {prediction.prescriptionId:0.####}, actual fare: 15.5");
+                    Console.WriteLine($"Predicted Round: {Math.Round(prediction.prescriptionId)}, actual fare: 18");
+                    Console.WriteLine($"**********************************************************************");
+
+                    var id = Convert.ToInt32(Math.Round(prediction.prescriptionId));
+                    if (id>0)
+                    {
+                        var prescripton = await _commonService.GetPrescriptionAsync(id);
+                        if (!String.IsNullOrWhiteSpace(prescripton))
+                            return Ok(prescripton);
+                    }
+                    return NotFound("Please train the data model first!");
+                }
+                return NotFound("Please fillup the diseaseId, treatmentId, chiefComplaints first!");
             }
             catch (Exception)
             {
