@@ -1,10 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.ML;
 using Microsoft.ML.Trainers;
 using PRS.Core;
-using PRS.Repository;
-using System.Text;
+using PRS.Service;
 
 namespace PRS.API.Controllers
 {
@@ -16,7 +14,7 @@ namespace PRS.API.Controllers
         private readonly string _trainDataPath;
         private readonly string _testDataPath;
         private readonly string _trainedModelPath;
-        private readonly PRS_DbContext _dbContext;
+        private readonly CommonService _commonService;
 
         public AIModelController()
         {
@@ -24,36 +22,18 @@ namespace PRS.API.Controllers
             _trainDataPath = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "Data", "patient-prescription-train.csv");
             _testDataPath = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "Data", "patient-prescription-test.csv");
             _trainedModelPath = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "Data", "PrescriptionPredictTrainedModel.zip");
-
-            _dbContext = new PRS_DbContext();
+            _commonService = new CommonService();
         }
         [HttpGet]
         [Route("dataset")]
         public async Task<IActionResult> Dataset()
         {
-            var trainingDataSet = await _dbContext.ModelTrainDataSets.ToListAsync();
-            if (trainingDataSet.Count > 0)
+            var isSuccess = await _commonService.CollectDataSet(_trainDataPath, _testDataPath);
+            if (isSuccess)
             {
-                StringBuilder builder = new StringBuilder();
-                foreach (ModelTrainDataSet trainingSet in trainingDataSet)
-                {
-                    builder.AppendLine(trainingSet.TrainDataSet);
-                }
-                System.IO.File.WriteAllText(_trainDataPath, builder.ToString(), new UTF8Encoding());
-
-                var testDataCount = Convert.ToInt32(Math.Round(trainingDataSet.Count*0.2));
-                var testDataSet = trainingDataSet.Take(testDataCount).ToList();
-                if (testDataSet.Count > 0)
-                {
-                    builder = new StringBuilder();
-                    foreach (ModelTrainDataSet trainingSet in testDataSet)
-                    {
-                        builder.AppendLine(trainingSet.TrainDataSet);
-                    }
-                    System.IO.File.WriteAllText(_testDataPath, builder.ToString(), new UTF8Encoding());
-                }
+                return Ok($"Successfully collected dataset from Database to perform trained model at {DateTime.Now}!");
             }
-            return Ok($"Successfully collected dataset from Database to perform trained model at {DateTime.Now}!");
+            return NotFound("Something went wrong!");
         }
 
         [HttpGet]
@@ -138,7 +118,7 @@ namespace PRS.API.Controllers
         // POST api/aimodel/predict
         [HttpPost]
         [Route("predict")]
-        public IActionResult Predict([FromBody] Patient model)
+        public async Task<IActionResult> Predict([FromBody] Patient model)
         {
             // Load the model from the zipped file
             ITransformer modelLoad = _mlContext.Model.Load(_trainedModelPath, out var modelSchema);
@@ -160,10 +140,10 @@ namespace PRS.API.Controllers
             Console.WriteLine($"Predicted Round: {Math.Round(prediction.prescriptionId)}, actual fare: 18");
             Console.WriteLine($"**********************************************************************");
 
+            var id = Convert.ToInt32(Math.Round(prediction.prescriptionId));
+            var prescripton =await _commonService.GetPrescriptionAsync(id);
 
-
-
-            return Ok(prediction);
+            return Ok(prescripton);
         }
     }
 }
