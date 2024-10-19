@@ -129,6 +129,9 @@ namespace PRS.API.Controllers
         {
             try
             {
+                if (!String.IsNullOrWhiteSpace(model.PrescriptionId))
+                    model=await _commonService.GetPredictRequestAsync(model.PrescriptionId);
+
                 // Load the model from the zipped file
                 ITransformer modelLoad = _mlContext.Model.Load(_trainedModelPath, out var modelSchema);
 

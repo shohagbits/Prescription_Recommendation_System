@@ -50,6 +50,31 @@ namespace PRS.Service
             }
             return false;
         }
+        public async Task<Patient> GetPredictRequestAsync(string id)
+        {
+            try
+            {
+                var request = new Patient();
+                var sqlParameters = new List<SqlParameter>()
+                {
+                    new SqlParameter("@Id", id)
+                };
+                var predictRequestInfo = await GetDataTableFromSP("GetPredictRequestInfo", sqlParameters);
+
+                if (predictRequestInfo!=null && predictRequestInfo.Rows.Count>0)
+                {
+                    request.DiseaseId=predictRequestInfo.Rows[0][0].ToString();
+                    request.TreatmentId=predictRequestInfo.Rows[0][1].ToString();
+                    request.ChiefComplaints=predictRequestInfo.Rows[0][2].ToString();
+                }
+                return request;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
         public async Task<string?> GetPrescriptionAsync(int id)
         {
             var sqlParameters = new List<SqlParameter>()
