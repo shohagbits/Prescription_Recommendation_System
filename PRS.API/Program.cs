@@ -16,7 +16,7 @@ namespace PRS.API
             {
                 options.SwaggerDoc("v3", new OpenApiInfo
                 {
-                    Title = "Prescription Recommendation Systems",
+                    Title = "AI Trained Model (Recommendation) Service API",
                     Version = "v3",
                     Description = "Prescription Recommendation System Web API"
                 });    
