@@ -31,9 +31,9 @@ namespace PRS.API.Controllers
             var isSuccess = await _commonService.CollectDataSet(_trainDataPath, _testDataPath);
             if (isSuccess)
             {
-                return Ok($"Successfully collected dataset from Database to perform trained model at {DateTime.Now}!");
+                return Ok(new { status = true, message = $"Successfully collected dataset from Database to perform trained model at {DateTime.Now}!" });
             }
-            return NotFound("Something went wrong! Please try again later");
+            return NotFound(new { status = false, message = "Something went wrong! Please try again later" });
         }
 
         [HttpGet]
@@ -114,12 +114,12 @@ namespace PRS.API.Controllers
                     mlContext.Model.Save(model, trainingDataViewSchema, _trainedModelPath);
                 }
 
-                return Ok($"Successfully trained an AI based Prescription Predict Model at {DateTime.Now}!");
+                return Ok(new { status = true, message = $"Successfully trained an AI based Prescription Predict Model at {DateTime.Now}!" });
             }
             catch (Exception ex)
             {
             }
-            return NotFound("Something went wrong! Please try again later");
+            return NotFound(new { status = false, message = "Something went wrong! Please try again later" });
         }
 
         // POST api/aimodel/predict
@@ -134,7 +134,7 @@ namespace PRS.API.Controllers
                     !String.IsNullOrWhiteSpace(model.ChiefComplaints))
                 {
                     if (!String.IsNullOrWhiteSpace(model.PrescriptionId))
-                        model=await _commonService.GetPredictRequestAsync(model.PrescriptionId);
+                        model = await _commonService.GetPredictRequestAsync(model.PrescriptionId);
 
                     // Load the model from the zipped file
                     ITransformer modelLoad = _mlContext.Model.Load(_trainedModelPath, out var modelSchema);
@@ -144,10 +144,10 @@ namespace PRS.API.Controllers
 
                     var prescription = new Prescription()
                     {
-                        diseaseId =model.DiseaseId,
+                        diseaseId = model.DiseaseId,
                         treatmentId = model.TreatmentId,
                         chiefComplaints = model.ChiefComplaints,
-                        prescriptionId =0 // To predict. 1,2,Chief complaints position 1,18
+                        prescriptionId = 0 // To predict. 1,2,Chief complaints position 1,18
                     };
                     var prediction = _predictionEngine.Predict(prescription);
 
@@ -157,7 +157,7 @@ namespace PRS.API.Controllers
                     Console.WriteLine($"**********************************************************************");
 
                     var id = Convert.ToInt32(Math.Round(prediction.prescriptionId));
-                    if (id>0)
+                    if (id > 0)
                     {
                         var prescripton = await _commonService.GetPrescriptionAsync(id);
                         if (!String.IsNullOrWhiteSpace(prescripton))
