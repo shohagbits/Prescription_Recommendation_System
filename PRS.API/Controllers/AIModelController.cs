@@ -167,10 +167,10 @@ namespace PRS.API.Controllers
                 }
                 return NotFound("Please fillup the diseaseId, treatmentId, chiefComplaints first!");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                return NotFound($"Something went wrong for {ex.Message}! Please try again later");
             }
-            return NotFound("Something went wrong! Please try again later");
         }
     }
 }
